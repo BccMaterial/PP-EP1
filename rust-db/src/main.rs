@@ -47,6 +47,7 @@ fn print_hashmap(hash_map: &HashMap<&str, DBTypes>) {
 
 fn main() {
     println!("Criando HashMap...");
+    let mut users_collection: Vec<&HashMap<&str, DBTypes>> = Vec::new();
     let mut user_data: HashMap<&str, DBTypes> = HashMap::new();
 
     println!("Inserindo um dado...");
@@ -61,5 +62,7 @@ fn main() {
 
     println!("Exemplo de dado:");
     print_hashmap(&user_data);
+    users_collection.push(&user_data);
     println!("{user_data:?}");
+    println!("{users_collection:?}")
 }

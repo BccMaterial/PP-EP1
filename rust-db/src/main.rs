@@ -24,7 +24,7 @@ impl Cpf {
 #[derive(Debug)]
 enum DBTypes<'a> {
     String(&'a str),
-    Int(usize),
+    Int(isize),
     Cpf(Cpf),
     HashMap(Box<HashMap<&'a str, DBTypes<'a>>>),
     Boolean(bool),
@@ -33,14 +33,14 @@ enum DBTypes<'a> {
 // O Box é um smart pointer, que aloca o HashMap no Heap ao invés da Stack, já que ele pode ser
 // infinito
 
-fn print_hashmap(hash_map: HashMap<&str, DBTypes>) {
+fn print_hashmap(hash_map: &HashMap<&str, DBTypes>) {
     for (key, value) in hash_map {
         match value {
             DBTypes::String(s) => println!("{key}: {s}"),
             DBTypes::Int(i) => println!("{key}: {i}"),
             DBTypes::Cpf(cpf) => println!("{key}: {:?}", cpf.to_string()),
             DBTypes::Boolean(b) => println!("{key}: {b:?}"),
-            DBTypes::HashMap(boxed_map) => print_hashmap(*boxed_map),
+            DBTypes::HashMap(boxed_map) => print_hashmap(boxed_map),
         }
     }
 }
@@ -60,5 +60,6 @@ fn main() {
     user_data.insert("properties", DBTypes::HashMap(Box::new(user_props)));
 
     println!("Exemplo de dado:");
-    print_hashmap(user_data);
+    print_hashmap(&user_data);
+    println!("{user_data:?}");
 }

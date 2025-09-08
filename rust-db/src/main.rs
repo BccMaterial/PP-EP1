@@ -28,6 +28,7 @@ impl Cpf {
 enum DBTypes<'a> {
     String(&'a str),
     Int(isize),
+    Float(f32),
     Cpf(Cpf),
     // O Box é um smart pointer, que aloca o HashMap no Heap ao invés da Stack, evitando stack
     // overflow
@@ -48,6 +49,7 @@ fn print_hashmap(hash_map: &DBRecord) {
             DBTypes::Int(i) => println!("{key}: {i}"),
             DBTypes::Cpf(cpf) => println!("{key}: {:?}", cpf.to_string()),
             DBTypes::Boolean(b) => println!("{key}: {b:?}"),
+            DBTypes::Float(f) => println!("{key}: {f:?}"),
             DBTypes::HashMap(boxed_map) => print_hashmap(boxed_map),
         }
     }
@@ -61,6 +63,7 @@ fn main() {
     println!("Inserindo um dado...");
     user_data.insert("name", DBTypes::String("Jorge"));
     user_data.insert("age", DBTypes::Int(32));
+    user_data.insert("height", DBTypes::Float(1.75));
     // Como é um Option, precisamos usar o "unwrap"
     user_data.insert("cpf", Cpf::new(12345678900).unwrap().into());
 

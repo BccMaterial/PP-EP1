@@ -29,8 +29,8 @@ enum DBTypes<'a> {
     String(&'a str),
     Int(isize),
     Cpf(Cpf),
-    // O Box é um smart pointer, que aloca o HashMap no Heap ao invés da Stack, já que ele pode ser
-    // infinito
+    // O Box é um smart pointer, que aloca o HashMap no Heap ao invés da Stack, evitando stack
+    // overflow
     HashMap(Box<DBRecord<'a>>),
     Boolean(bool),
 }
@@ -67,10 +67,14 @@ fn main() {
     let mut user_props: HashMap<&str, DBTypes> = HashMap::new();
     user_props.insert("account_enabled", DBTypes::Boolean(true));
     user_data.insert("properties", DBTypes::HashMap(Box::new(user_props)));
+    users_collection.push(&user_data);
 
     println!("Exemplo de dado:");
     print_hashmap(&user_data);
-    users_collection.push(&user_data);
+    println!("---------------------------");
+    println!("Exemplo de item da coleção:");
     println!("{user_data:?}");
+    println!("---------------------------");
+    println!("Coleção:");
     println!("{users_collection:?}")
 }

@@ -4,6 +4,9 @@ use std::collections::HashMap;
 #[derive(Debug)]
 struct Cpf(u128);
 
+// Criação de um alias do hashmap, para facilitar a leitura
+type DBRecord<'a> = HashMap<&'a str, DBTypes<'a>>;
+
 impl Cpf {
     fn new(digits: u128) -> Option<Self> {
         // Disclaimer: O ideal é retornar um Result no lugar do Option, mostrando o erro que deu
@@ -26,14 +29,19 @@ enum DBTypes<'a> {
     String(&'a str),
     Int(isize),
     Cpf(Cpf),
-    HashMap(Box<HashMap<&'a str, DBTypes<'a>>>),
+    // O Box é um smart pointer, que aloca o HashMap no Heap ao invés da Stack, já que ele pode ser
+    // infinito
+    HashMap(Box<DBRecord<'a>>),
     Boolean(bool),
 }
 
-// O Box é um smart pointer, que aloca o HashMap no Heap ao invés da Stack, já que ele pode ser
-// infinito
+impl From<Cpf> for DBTypes<'_> {
+    fn from(cpf: Cpf) -> Self {
+        DBTypes::Cpf(cpf)
+    }
+}
 
-fn print_hashmap(hash_map: &HashMap<&str, DBTypes>) {
+fn print_hashmap(hash_map: &DBRecord) {
     for (key, value) in hash_map {
         match value {
             DBTypes::String(s) => println!("{key}: {s}"),
@@ -47,14 +55,14 @@ fn print_hashmap(hash_map: &HashMap<&str, DBTypes>) {
 
 fn main() {
     println!("Criando HashMap...");
-    let mut users_collection: Vec<&HashMap<&str, DBTypes>> = Vec::new();
-    let mut user_data: HashMap<&str, DBTypes> = HashMap::new();
+    let mut users_collection: Vec<&DBRecord> = Vec::new();
+    let mut user_data = DBRecord::new();
 
     println!("Inserindo um dado...");
     user_data.insert("name", DBTypes::String("Jorge"));
     user_data.insert("age", DBTypes::Int(32));
     // Como é um Option, precisamos usar o "unwrap"
-    user_data.insert("cpf", DBTypes::Cpf(Cpf::new(12345678900).unwrap()));
+    user_data.insert("cpf", Cpf::new(12345678900).unwrap().into());
 
     let mut user_props: HashMap<&str, DBTypes> = HashMap::new();
     user_props.insert("account_enabled", DBTypes::Boolean(true));

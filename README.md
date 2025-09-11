@@ -43,7 +43,7 @@ cargo run
 
 Caso seja necessário executar algum exemplo, podemos executar da seguinte forma:
 ```shell
-cargo run --bin example_hashmap
+cargo run --example hashmap
 ```
 
 > [!TIP]

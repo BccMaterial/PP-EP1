@@ -2,5 +2,14 @@
 name = "rust-db"
 version = "0.1.0"
 edition = "2024"
+default-run = "default"
+
+[[bin]]
+name = "default"
+path = "src/main.rs"
+
+[[bin]]
+name = "example_hashmap"
+path = "examples/hashmap.rs"
 
 [dependencies]

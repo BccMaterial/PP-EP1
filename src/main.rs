@@ -17,17 +17,22 @@ fn prompt_user(delimiter: Option<&str>) -> String {
 
 fn main() {
     let mut key_values = KeyValues::new();
-    println!("Bem-vindo ao rust-db!");
-    println!("GET -> Pega uma chave");
-    println!("ADD -> Adiciona uma chave");
-    println!("PRINT -> Printa o KV");
-    println!("EXIT -> Termina a execução");
+    println!("Comandos:");
+    println!("- ADD -> Adiciona uma chave (Ex.: ADD chave valor)");
+    println!("- GET -> Pega uma chave (Ex.: GET chave)");
+    println!("- PRINT -> Printa o KV");
+    println!("- HELP -> Mostra novamente os comandos");
+    println!("- EXIT -> Termina a execução");
     loop {
         let user_input = prompt_user(None);
         let values: Vec<&str> = user_input.split_whitespace().collect();
         let command = values[0].to_uppercase();
         // Aqui precisamos converter para &str
         match command.as_str() {
+            "EXIT" => {
+                println!("Valeu falô!");
+                break;
+            }
             "ADD" => {
                 if values.len() < 3 {
                     println!("GET precisa de uma chave e um valer (Ex.: ADD nome thiago)");
@@ -38,6 +43,7 @@ fn main() {
                 key_values.insert(key.clone(), value.clone());
                 println!("ADDED {key} = {value}")
             }
+
             "GET" => {
                 if values.len() < 2 {
                     println!("GET precisa de uma chave (Ex.: GET nome)");
@@ -47,17 +53,19 @@ fn main() {
                 let some_value = key_values.get(key);
                 match some_value {
                     Some(value) => println!("{key} = {value}"),
-                    None => println!("Not Found"),
+                    None => println!("ERRO: Chave não encontrada"),
                 }
             }
-            "PRINT" => println!("{key_values:?}"),
-            "EXIT" => break,
-            _ => {
-                println!("Comando inválido.");
-                println!("GET chave -> Pega uma chave");
-                println!("ADD chave valor -> Adiciona uma chave");
+            "HELP" => {
+                println!("ADD {{chave}} {{valor}} -> Adiciona uma chave");
+                println!("GET {{chave}} -> Pega uma chave");
                 println!("PRINT -> Printa o KV");
                 println!("EXIT -> Termina a execução");
+                println!("HELP -> Mostra essa mensagem");
+            }
+            "PRINT" => println!("{key_values:?}"),
+            _ => {
+                println!("ERRO: Comando não reconhecido. Caso queira ver um comando, digite HELP");
             }
         }
     }

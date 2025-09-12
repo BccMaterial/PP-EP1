@@ -12,10 +12,10 @@ impl UserInput {
             Ok(v) => v,
             Err(_) => DBCommand::ERROR,
         };
-        let options = values[1..=(values.len() - 1)]
-            .iter()
-            .map(|v| v.to_string())
-            .collect();
+        let options = values[1..=(values.len() - 1)] // &[&str]
+            .iter() // Iter
+            .map(|v| v.to_string()) // Iter -> String
+            .collect(); // Vec<String>
         Self { command, options }
     }
 }

@@ -14,7 +14,7 @@ pub fn prompt_user(delimiter: Option<&str>) -> UserInput {
     io::Write::flush(&mut io::stdout()).expect("flush failed!");
     io::stdin()
         .read_line(&mut input)
-        .expect("Failed to read line.");
+        .expect("ERRO: Falha ao ler a linha");
     UserInput::new(input)
 }
 
@@ -31,6 +31,9 @@ pub fn add_key(hashmap: &mut DBData, input: UserInput) {
         println!("GET precisa de uma chave e um valor (Ex.: ADD nome thiago)");
         return;
     }
+    // TODO:
+    // for extension in db.extensions (Type = Write)
+    // if regex match -> Apply
     let key = input.options[0].to_string();
     let value = &input.options[1..=(input.options.len() - 1)].join(" ");
     hashmap.insert(key.clone(), value.clone());
@@ -42,6 +45,9 @@ pub fn get_key(hashmap: &DBData, input: UserInput) {
         println!("GET precisa de uma chave (Ex.: GET nome)");
         return;
     }
+    // TODO:
+    // for extension in db.extensions (Type = READ)
+    // if regex match -> Apply
     let key = &input.options[0];
     let some_value = hashmap.get(key);
     match some_value {

@@ -3,13 +3,14 @@ use std::str::FromStr;
 // DISCLAIMER: Fiz isso pra brincar com ENUM
 pub struct ParseDBCommandError;
 
+// TODO: Adicionar comando LUA, p/ carregar extensão
 pub enum DBCommand {
     ERROR = -1,
-    ADD = 0,
-    GET = 1,
-    PRINT = 2,
-    HELP = 3,
-    EXIT = 4,
+    EXIT = 0,
+    ADD = 1,
+    GET = 2,
+    PRINT = 3,
+    HELP = 4,
 }
 
 impl FromStr for DBCommand {

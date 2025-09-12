@@ -9,15 +9,23 @@
  * Estrutura das nossas extensões
  * Teremos um HashMap <String, LuaExtension>
  * -> Pattern: é o regex que queremos detectar
- * no hashmap do banco (Exemplo: cpf_* pra aplicar o código em qualquer extensão)
+ * no hashmap do banco (Exemplo: cpf_* pra
+ * aplicar o código em qualquer chave que começa com "cpf_")
  * -> Code: Filepath do código em Lua
  * */
 
+// IMPORTANTE: Remover quando começar a desenvolver
 #![allow(dead_code)]
 
+pub enum ExtensionType {
+    READ = 0,
+    WRITE = 1,
+}
+
 pub struct LuaExtension {
-    pattern: String,
-    code: String,
+    regex_pattern: String,
+    code_path: String,
+    ext_type: ExtensionType,
 }
 
 impl LuaExtension {
@@ -33,6 +41,8 @@ impl LuaExtension {
 
     // Chamamos o read_code
     // Executamos o código
+    // Deve retornar um Result,
+    // com o retorno do Lua, ou com Erro do Lua
     pub fn execute_code() {
         panic!("execute_code não implementado")
     }

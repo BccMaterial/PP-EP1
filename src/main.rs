@@ -1,14 +1,12 @@
+pub mod database;
 pub mod lua;
 pub mod menu;
 
+use database::Database;
 use menu::{command::DBCommand, user_input::UserInput};
-use std::collections::HashMap;
-
-// HashMap não pode ser &str, pois precisamos guardar na memória
-type KeyValues = HashMap<String, String>;
 
 fn main() {
-    let mut hashmap = KeyValues::new();
+    let mut db = Database::new();
     println!("Comandos:");
     println!("- ADD -> Adiciona uma chave (Ex.: ADD chave valor)");
     println!("- GET -> Pega uma chave (Ex.: GET chave)");
@@ -23,10 +21,10 @@ fn main() {
                 println!("Valeu falô!");
                 break;
             }
-            DBCommand::ADD => menu::add_key(&mut hashmap, input),
-            DBCommand::GET => menu::get_key(&hashmap, input),
+            DBCommand::ADD => menu::add_key(&mut db.hashmap, input),
+            DBCommand::GET => menu::get_key(&db.hashmap, input),
             DBCommand::HELP => menu::print_help(),
-            DBCommand::PRINT => println!("{hashmap:?}"),
+            DBCommand::PRINT => println!("{:?}", db.hashmap),
             DBCommand::ERROR => {
                 println!("ERRO: Comando não reconhecido");
                 println!("\tDica: HELP -> Mostra os comandos");

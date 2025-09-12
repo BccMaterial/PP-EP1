@@ -1,7 +1,7 @@
 pub mod command;
 pub mod user_input;
 
-use super::KeyValues;
+use super::database::DBData;
 use std::io;
 use user_input::UserInput;
 
@@ -26,7 +26,7 @@ pub fn print_help() {
     println!("HELP -> Mostra essa mensagem");
 }
 
-pub fn add_key(hashmap: &mut KeyValues, input: UserInput) {
+pub fn add_key(hashmap: &mut DBData, input: UserInput) {
     if input.options.len() < 2 {
         println!("GET precisa de uma chave e um valor (Ex.: ADD nome thiago)");
         return;
@@ -37,7 +37,7 @@ pub fn add_key(hashmap: &mut KeyValues, input: UserInput) {
     println!("ADDED {key} = {value}")
 }
 
-pub fn get_key(hashmap: &KeyValues, input: UserInput) {
+pub fn get_key(hashmap: &DBData, input: UserInput) {
     if input.options.len() < 1 {
         println!("GET precisa de uma chave (Ex.: GET nome)");
         return;

@@ -9,12 +9,12 @@ Enunciado: https://crivelaro.notion.site/Banco-de-Dados-Rust-Lua-8517a7379cc9452
 ## Projeto
 
 O projeto possui duas divisões:
-- **rust-db:** Lida com as operações do banco de dados, é a "engine" do nosso banco
-- **lua-client:** Código em lua que utilizará o `rust-db` como base para as interações com o banco
+- **rust-db:** Lida com as operações do banco de dados, é a engine do nosso banco
+- **lua-extensions:** Diretório com exemplos de scripts em lua, para o Rust usar
 
 ## rust-db
 
-Motor do banco, que vai armazenar os pares chave-valor.
+Motor do banco, que vai armazenar os pares chave-valor e as extensões.
 
 ### Binários
 

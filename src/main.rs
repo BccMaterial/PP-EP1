@@ -1,22 +1,14 @@
+pub mod lua;
+pub mod menu;
+
+use menu::{command::DBCommand, user_input::UserInput};
 use std::collections::HashMap;
-use std::io;
 
 // HashMap não pode ser &str, pois precisamos guardar na memória
 type KeyValues = HashMap<String, String>;
 
-fn prompt_user(delimiter: Option<&str>) -> String {
-    let mut input = String::new();
-    print!("{}", delimiter.unwrap_or("> "));
-    // Garante que o prompt seja exibido
-    io::Write::flush(&mut io::stdout()).expect("flush failed!");
-    io::stdin()
-        .read_line(&mut input)
-        .expect("Failed to read line.");
-    input.trim().to_string()
-}
-
 fn main() {
-    let mut key_values = KeyValues::new();
+    let mut hashmap = KeyValues::new();
     println!("Comandos:");
     println!("- ADD -> Adiciona uma chave (Ex.: ADD chave valor)");
     println!("- GET -> Pega uma chave (Ex.: GET chave)");
@@ -24,48 +16,20 @@ fn main() {
     println!("- HELP -> Mostra novamente os comandos");
     println!("- EXIT -> Termina a execução");
     loop {
-        let user_input = prompt_user(None);
-        let values: Vec<&str> = user_input.split_whitespace().collect();
-        let command = values[0].to_uppercase();
+        let input: UserInput = menu::prompt_user(None);
         // Aqui precisamos converter para &str
-        match command.as_str() {
-            "EXIT" => {
+        match input.command {
+            DBCommand::EXIT => {
                 println!("Valeu falô!");
                 break;
             }
-            "ADD" => {
-                if values.len() < 3 {
-                    println!("GET precisa de uma chave e um valer (Ex.: ADD nome thiago)");
-                    continue;
-                }
-                let key = values[1].to_string();
-                let value = &values[2..=(values.len() - 1)].join(" ");
-                key_values.insert(key.clone(), value.clone());
-                println!("ADDED {key} = {value}")
-            }
-
-            "GET" => {
-                if values.len() < 2 {
-                    println!("GET precisa de uma chave (Ex.: GET nome)");
-                    continue;
-                }
-                let key = values[1];
-                let some_value = key_values.get(key);
-                match some_value {
-                    Some(value) => println!("{key} = {value}"),
-                    None => println!("ERRO: Chave não encontrada"),
-                }
-            }
-            "HELP" => {
-                println!("ADD {{chave}} {{valor}} -> Adiciona uma chave");
-                println!("GET {{chave}} -> Pega uma chave");
-                println!("PRINT -> Printa o KV");
-                println!("EXIT -> Termina a execução");
-                println!("HELP -> Mostra essa mensagem");
-            }
-            "PRINT" => println!("{key_values:?}"),
-            _ => {
-                println!("ERRO: Comando não reconhecido. Caso queira ver um comando, digite HELP");
+            DBCommand::ADD => menu::add_key(&mut hashmap, input),
+            DBCommand::GET => menu::get_key(&hashmap, input),
+            DBCommand::HELP => menu::print_help(),
+            DBCommand::PRINT => println!("{hashmap:?}"),
+            DBCommand::ERROR => {
+                println!("ERRO: Comando não reconhecido");
+                println!("\tDica: HELP -> Mostra os comandos");
             }
         }
     }

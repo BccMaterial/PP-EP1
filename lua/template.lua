@@ -1,10 +1,10 @@
--- Sempre retorna (string, bool)
+-- Get deve retornar (string, bool) ou (string)
 function get(key, value)
     print("get")
     return value, true
 end
 
--- Sempre retorna (bool)
+-- Add deve retornar (bool)
 function add(key, value)
     print("add")
     return true

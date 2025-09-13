@@ -133,7 +133,7 @@ impl Database {
                     let lua_value = &results_vec[0];
                     let passed = &results_vec[1];
                     if lua_value.is_string() && passed.is_boolean() {
-                        if passed.as_boolean().unwrap_or(false) {
+                        if !passed.as_boolean().unwrap_or(false) {
                             continue;
                         }
                         match lua_value.to_string() {
@@ -149,7 +149,7 @@ impl Database {
                         return Err(Error::new(
                             ErrorKind::InvalidData,
                             format!(
-                                "ERRO: Os retornos do \"get\" da extensão {ext_name} não seguem o formato (string, bool)"
+                                "ERRO: Os retornos do \"get\" da extensão {ext_name} não seguem o formato string, bool"
                             ),
                         ));
                     }
@@ -158,7 +158,7 @@ impl Database {
                     return Err(Error::new(
                         ErrorKind::InvalidData,
                         format!(
-                            "Erro ao executar \"get\" com a extensão {ext_name}: Quantidade de retornos da função inválida (Deve retornar string e bool, ou apenas string)"
+                            "Erro ao executar \"get\" com a extensão {ext_name}: Quantidade de retornos da função inválida (Deve retornar string, bool ou string)"
                         ),
                     ));
                 }
@@ -170,7 +170,7 @@ impl Database {
 
     pub fn add_data(self: &mut Self, data: (&str, &str)) -> Result<String, Error> {
         for (ext_name, ext_funcs) in &self.extensions {
-            let is_satisfied: bool = ext_funcs
+            let result: mlua::MultiValue = ext_funcs
                 .add
                 .call((data.0.to_string(), data.1.to_string()))
                 .map_err(|lua_err| {
@@ -179,7 +179,17 @@ impl Database {
                         format!("Erro ao executar \"add\" com a extensão {ext_name}: {lua_err}"),
                     )
                 })?;
-            if is_satisfied {
+
+            if result.len() != 1 {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    format!(
+                        "Erro ao executar \"add\" com a extensão {ext_name}: Quantidade de retornos da função inválida (Deve retornar apenas bool)"
+                    ),
+                ));
+            }
+
+            if result[0].as_boolean().unwrap_or(false) {
                 break;
             }
         }

@@ -9,7 +9,7 @@ fn main() {
     println!("Comandos:");
     println!("- ADD -> Adiciona uma chave (Ex.: ADD chave valor)");
     println!("- GET -> Pega uma chave (Ex.: GET chave)");
-    println!("- PRINT -> Printa o KV");
+    println!("- PRINT -> Imprime informações (Ex.: PRINT data, PRINT extensions)");
     println!("- LOAD -> Carrega uma extensão (Ex.: LOAD ./lua/cpf.lua)");
     println!("- HELP -> Mostra novamente os comandos");
     println!("- EXIT -> Termina a execução");
@@ -21,10 +21,10 @@ fn main() {
                 println!("Valeu falô!");
                 break;
             }
-            DBCommand::ADD => menu::add_key(&mut db.hashmap, input),
-            DBCommand::GET => menu::get_key(&db.hashmap, input),
+            DBCommand::ADD => menu::add_key(&mut db, input),
+            DBCommand::GET => menu::get_key(&db, input),
             DBCommand::HELP => menu::print_help(),
-            DBCommand::PRINT => println!("{:?}", db.hashmap),
+            DBCommand::PRINT => menu::print_info(&db, input),
             DBCommand::LOAD => menu::load_extension(&mut db, input),
             DBCommand::ERROR => {
                 println!("ERRO: Comando não reconhecido");

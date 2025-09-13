@@ -22,20 +22,20 @@ pub type DBData = HashMap<String, String>;
 pub type DBExtensions = HashMap<String, LuaExtension>;
 
 pub struct Database {
-    pub hashmap: DBData,
+    pub data: DBData,
     pub lua_vm: mlua::Lua,
-    pub extensions_table: DBExtensions,
+    pub extensions: DBExtensions,
 }
 
 impl Database {
     pub fn new() -> Self {
         let lua_vm = mlua::Lua::new();
-        let extensions_table: HashMap<String, LuaExtension> = HashMap::new();
+        let extensions_hashmap: HashMap<String, LuaExtension> = HashMap::new();
 
         Self {
-            hashmap: DBData::new(),
+            data: DBData::new(),
             lua_vm,
-            extensions_table,
+            extensions: extensions_hashmap,
         }
     }
 
@@ -43,7 +43,7 @@ impl Database {
         let lua_file = fs::read_to_string(file_path.to_string()).map_err(|file_err| {
             Error::new(
                 file_err.kind(),
-                format!("Erro ao abrir o arquivo:\n{file_err:?}"),
+                format!("Erro ao abrir o arquivo {file_path}: {file_err}"),
             )
         })?;
 
@@ -52,31 +52,90 @@ impl Database {
         self.lua_vm.load(&lua_file).exec().map_err(|lua_err| {
             Error::new(
                 ErrorKind::InvalidData,
-                format!("Erro ao interpretar o script {filename}:\n{lua_err:?}"),
+                format!("Erro ao interpretar o script {file_path}: {lua_err}"),
             )
         })?;
 
         let get_func: mlua::Function = self.lua_vm.globals().get("get").map_err(|lua_err| {
             Error::new(
                 ErrorKind::InvalidData,
-                format!("Erro ao carregar função get: {lua_err:?}"),
+                format!("Erro ao carregar função get: {lua_err}"),
             )
         })?;
 
-        let add_func: mlua::Function = self.lua_vm.globals().get("get").map_err(|lua_err| {
+        let add_func: mlua::Function = self.lua_vm.globals().get("add").map_err(|lua_err| {
             Error::new(
                 ErrorKind::InvalidData,
-                format!("Erro ao carregar função add: {lua_err:?}"),
+                format!("Erro ao carregar função add: {lua_err}"),
             )
         })?;
 
-        self.extensions_table.insert(
+        self.extensions.insert(
             filename,
             LuaExtension {
                 get: get_func,
                 add: add_func,
             },
         );
+
         Ok(String::from("Extensão adicionada com sucesso!"))
+    }
+
+    pub fn get_data(self: &Self, key: &str) -> Result<String, Error> {
+        let mut value: String = match self.data.get(key) {
+            Some(v) => v.to_string(),
+            None => {
+                let err = Error::new(ErrorKind::NotFound, "ERRO: Chave não encontrada");
+                return Err(err);
+            }
+        };
+
+        for (ext_name, ext_funcs) in &self.extensions {
+            let result: (String, bool) =
+                ext_funcs
+                    .get
+                    .call((key, value.as_str()))
+                    .map_err(|lua_err| {
+                        Error::new(
+                            ErrorKind::InvalidData,
+                            format!(
+                                "Erro ao executar \"get\" com a extensão {ext_name}: {lua_err}"
+                            ),
+                        )
+                    })?;
+
+            if result.1 {
+                value = result.0;
+                break;
+            }
+        }
+
+        Ok(value)
+    }
+
+    pub fn add_data(self: &mut Self, data: (&str, &str)) -> Result<String, Error> {
+        for (ext_name, ext_funcs) in &self.extensions {
+            let is_satisfied: bool = ext_funcs
+                .get
+                .call((data.0.to_string(), data.1.to_string()))
+                .map_err(|lua_err| {
+                    Error::new(
+                        ErrorKind::InvalidData,
+                        format!("Erro ao executar \"add\" com a extensão {ext_name}: {lua_err}"),
+                    )
+                })?;
+            if is_satisfied {
+                break;
+            }
+        }
+
+        match self.data.insert(data.0.to_string(), data.1.to_string()) {
+            Some(_) => {
+                return Ok(String::from(format!("UPDATED {} = {}", data.0, data.1)));
+            }
+            None => {
+                return Ok(String::from(format!("ADDED {} = {}", data.0, data.1)));
+            }
+        };
     }
 }

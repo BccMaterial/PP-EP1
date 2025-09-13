@@ -1,7 +1,7 @@
 pub mod command;
 pub mod user_input;
 
-use super::database::{DBData, Database};
+use super::database::Database;
 use std::io;
 use user_input::UserInput;
 
@@ -21,13 +21,13 @@ pub fn prompt_user(delimiter: Option<&str>) -> UserInput {
 pub fn print_help() {
     println!("ADD {{chave}} {{valor}} -> Adiciona uma chave");
     println!("GET {{chave}} -> Pega uma chave");
-    println!("PRINT -> Printa o KV");
+    println!("PRINT -> Printa os dados ou as extensões (Valores: data/extensions)");
     println!("LOAD {{caminho}} -> Carrega uma extensão");
     println!("EXIT -> Termina a execução");
     println!("HELP -> Mostra essa mensagem");
 }
 
-pub fn add_key(hashmap: &mut DBData, input: UserInput) {
+pub fn add_key(db: &mut Database, input: UserInput) {
     if input.options.len() < 2 {
         println!("GET precisa de uma chave e um valor (Ex.: ADD nome thiago)");
         return;
@@ -35,25 +35,37 @@ pub fn add_key(hashmap: &mut DBData, input: UserInput) {
     // TODO:
     // for extension in db.extensions (Type = Write)
     // if regex match -> Apply
-    let key = input.options[0].to_string();
-    let value = &input.options[1..=(input.options.len() - 1)].join(" ");
-    hashmap.insert(key.clone(), value.clone());
-    println!("ADDED {key} = {value}")
+    let key = input.options[0].clone();
+    let value = input.options[1..=(input.options.len() - 1)].join(" ");
+    match db.add_data((&key, &value)) {
+        Ok(value) => println!("{value}"),
+        Err(err) => println!("{err}"),
+    }
 }
 
-pub fn get_key(hashmap: &DBData, input: UserInput) {
+pub fn get_key(db: &Database, input: UserInput) {
     if input.options.len() < 1 {
         println!("GET precisa de uma chave (Ex.: GET nome)");
         return;
     }
-    // TODO:
-    // for extension in db.extensions (Type = READ)
-    // if regex match -> Apply
     let key = &input.options[0];
-    let some_value = hashmap.get(key);
-    match some_value {
-        Some(value) => println!("{key} = {value}"),
-        None => println!("ERRO: Chave não encontrada"),
+    match db.get_data(key) {
+        Ok(value) => println!("{key} = {value}"),
+        Err(err) => println!("{err}"),
+    }
+}
+
+pub fn print_info(db: &Database, input: UserInput) {
+    if input.options.len() < 1 {
+        println!("PRINT precisa de um argumento (Ex.: PRINT data)");
+        return;
+    }
+    let argument = &input.options[0].to_string().to_uppercase();
+
+    match argument.as_str() {
+        "DATA" => println!("{:?}", db.data),
+        "EXTENSIONS" => println!("{:?}", db.extensions.keys()),
+        _ => println!("Erro: argumento {argument} não suportado (utilize data ou extensions)"),
     }
 }
 
@@ -66,6 +78,6 @@ pub fn load_extension(db: &mut Database, input: UserInput) {
     let file_path = &input.options[0];
     match db.add_extension(file_path) {
         Ok(msg) => println!("{msg}"),
-        Err(err) => println!("{err:?}"),
+        Err(err) => println!("{err}"),
     };
 }

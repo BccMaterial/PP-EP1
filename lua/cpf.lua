@@ -1,8 +1,8 @@
 function add(key,value)
+    if not key:match("^(cpf_)(.*)$") then return false end --verifica se o formato da chave ta certo
     if #value ~= 11 then --verifica o tamanho
         error("formato do cpf invalido")
     end
-    if not key:match("^(cpf_)(.*)$") then return false end --verifica se o formato da chave ta certo
     if not value:match("^%d+$") then --checa se tem letra
     error("formato do cpf invalido")
     end
@@ -40,13 +40,16 @@ function add(key,value)
     if (resto2 == 0 or resto2 == 1) then y = 0 else y = 11-resto2 end
     if numeros[11] ~= y then error("cpf invalido") end
     
-return key,true
+return true
     
 end
 
 
 function get(key,value)
-    return key,value
+    if not key:match("^(cpf_)(.*)$") then return false end --verifica se o formato da chave ta certo
+    if #value ~= 11 then --verifica o tamanho
+        error("formato do cpf invalido")
+    end
+    formato = string.sub(value, 1, 3) .. "." .. string.sub(value, 4, 6) .. "." ..string.sub(value, 7, 9) .. "-" ..string.sub(value, 10, 11)
+    return formato,true
 end
-
-

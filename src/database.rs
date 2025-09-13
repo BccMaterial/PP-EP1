@@ -82,7 +82,7 @@ impl Database {
     }
 
     pub fn get_data(self: &Self, key: &str) -> Result<String, Error> {
-        let mut value: String = match self.data.get(key) {
+        let value: String = match self.data.get(key) {
             Some(v) => v.to_string(),
             None => {
                 let err = Error::new(ErrorKind::NotFound, "ERRO: Chave não encontrada");
@@ -91,7 +91,7 @@ impl Database {
         };
 
         for (ext_name, ext_funcs) in &self.extensions {
-            let result: (String, bool) =
+            let result: mlua::MultiValue =
                 ext_funcs
                     .get
                     .call((key, value.as_str()))
@@ -104,9 +104,64 @@ impl Database {
                         )
                     })?;
 
-            if result.1 {
-                value = result.0;
-                break;
+            let results_vec = result.into_vec();
+
+            // Se retorna só string, consideramos como true
+            match results_vec.len() {
+                1 => {
+                    let lua_value = &results_vec[0];
+                    if lua_value.is_string() {
+                        match lua_value.to_string() {
+                            Ok(s) => return Ok(s),
+                            Err(lua_err) => {
+                                return Err(Error::new(
+                                    ErrorKind::InvalidData,
+                                    format!("Erro ao converter o retorno para string: {lua_err}"),
+                                ));
+                            }
+                        }
+                    } else {
+                        return Err(Error::new(
+                            ErrorKind::InvalidData,
+                            format!(
+                                "ERRO: O retorno do \"get\" da extensão {ext_name} não é uma string"
+                            ),
+                        ));
+                    }
+                }
+                2 => {
+                    let lua_value = &results_vec[0];
+                    let passed = &results_vec[1];
+                    if lua_value.is_string() && passed.is_boolean() {
+                        if passed.as_boolean().unwrap_or(false) {
+                            continue;
+                        }
+                        match lua_value.to_string() {
+                            Ok(s) => return Ok(s),
+                            Err(lua_err) => {
+                                return Err(Error::new(
+                                    ErrorKind::InvalidData,
+                                    format!("Erro ao converter o retorno para string: {lua_err}"),
+                                ));
+                            }
+                        }
+                    } else {
+                        return Err(Error::new(
+                            ErrorKind::InvalidData,
+                            format!(
+                                "ERRO: Os retornos do \"get\" da extensão {ext_name} não seguem o formato (string, bool)"
+                            ),
+                        ));
+                    }
+                }
+                _ => {
+                    return Err(Error::new(
+                        ErrorKind::InvalidData,
+                        format!(
+                            "Erro ao executar \"get\" com a extensão {ext_name}: Quantidade de retornos da função inválida (Deve retornar string e bool, ou apenas string)"
+                        ),
+                    ));
+                }
             }
         }
 
@@ -116,7 +171,7 @@ impl Database {
     pub fn add_data(self: &mut Self, data: (&str, &str)) -> Result<String, Error> {
         for (ext_name, ext_funcs) in &self.extensions {
             let is_satisfied: bool = ext_funcs
-                .get
+                .add
                 .call((data.0.to_string(), data.1.to_string()))
                 .map_err(|lua_err| {
                     Error::new(

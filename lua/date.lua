@@ -10,13 +10,13 @@ local function verify_iso8601(date)
 end
 
 local function to_br(date)
-    local year, month, day = date:math("^(%d%d%d%d)%-(%d%d)%-(%d%d)$")
+    local year, month, day = date:match("^(%d%d%d%d)%-(%d%d)%-(%d%d)$")
     return string.format("%02d/%02d/%04d", day, month, year)
 end
 
 function get(key, value)
     if key:match("^data_") and value then
-            return to_br() --Implement to_br() later
+            return to_br() 
     end
     return value
 end

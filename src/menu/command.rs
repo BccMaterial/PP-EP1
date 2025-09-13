@@ -10,7 +10,8 @@ pub enum DBCommand {
     ADD = 1,
     GET = 2,
     PRINT = 3,
-    HELP = 4,
+    LOAD = 4,
+    HELP = 5,
 }
 
 impl FromStr for DBCommand {
@@ -22,6 +23,7 @@ impl FromStr for DBCommand {
             "GET" => Ok(DBCommand::GET),
             "PRINT" => Ok(DBCommand::PRINT),
             "HELP" => Ok(DBCommand::HELP),
+            "LOAD" => Ok(DBCommand::LOAD),
             "EXIT" => Ok(DBCommand::EXIT),
             _ => Err(ParseDBCommandError),
         }

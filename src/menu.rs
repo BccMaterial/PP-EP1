@@ -1,7 +1,7 @@
 pub mod command;
 pub mod user_input;
 
-use super::database::DBData;
+use super::database::{DBData, Database};
 use std::io;
 use user_input::UserInput;
 
@@ -22,6 +22,7 @@ pub fn print_help() {
     println!("ADD {{chave}} {{valor}} -> Adiciona uma chave");
     println!("GET {{chave}} -> Pega uma chave");
     println!("PRINT -> Printa o KV");
+    println!("LOAD {{caminho}} -> Carrega uma extensão");
     println!("EXIT -> Termina a execução");
     println!("HELP -> Mostra essa mensagem");
 }
@@ -54,4 +55,17 @@ pub fn get_key(hashmap: &DBData, input: UserInput) {
         Some(value) => println!("{key} = {value}"),
         None => println!("ERRO: Chave não encontrada"),
     }
+}
+
+pub fn load_extension(db: &mut Database, input: UserInput) {
+    if input.options.len() < 1 {
+        println!("LOAD precisa de um caminho de arquivo (Ex.: ./lua/cpf.lua)");
+        return;
+    }
+
+    let file_path = &input.options[0];
+    match db.add_extension(file_path) {
+        Ok(msg) => println!("{msg}"),
+        Err(err) => println!("{err:?}"),
+    };
 }

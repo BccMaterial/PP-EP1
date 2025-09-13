@@ -3,6 +3,5 @@ target
 .vscode
 .idea
 /luarocks
-/lua
 /lua_modules
 /.luarocks

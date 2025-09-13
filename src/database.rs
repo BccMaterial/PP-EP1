@@ -120,6 +120,10 @@ impl Database {
                                 ));
                             }
                         }
+                    } else if lua_value.is_boolean() {
+                        if lua_value.as_boolean().unwrap_or(false) {
+                            continue;
+                        }
                     } else {
                         return Err(Error::new(
                             ErrorKind::InvalidData,

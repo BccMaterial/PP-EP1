@@ -34,3 +34,10 @@ Para rodar algum código do diretório `examples`, utilizamos o seguinte comando
 ```shell
 cargo run --example hashmap
 ```
+## Criação de uma extensão
+
+Para criar uma extensão para o banco, deve-se seguir o template encontrado em [./lua/template.lua](https://github.com/BccMaterial/PP-EP1/blob/main/lua/template.lua).
+
+Sua função deve possuir duas funções no escopo dos `globals`, um `add` e um `get`, onde:
+- O `add` retorna um booleano ou joga um erro, dizendo se a entrada é válida
+- O `get` retorna `string, bool`, `string` ou joga um erro

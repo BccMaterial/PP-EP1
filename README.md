@@ -6,6 +6,11 @@ EP-1 De paradigmas de programação
 
 Enunciado: https://crivelaro.notion.site/Banco-de-Dados-Rust-Lua-8517a7379cc94527be0147a21b504622
 
+## Requisitos
+
+- Lua 5.4
+- Rust >= 1.88
+
 ## Projeto
 
 O projeto possui duas divisões:

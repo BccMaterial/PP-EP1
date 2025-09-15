@@ -1,16 +1,6 @@
 use mlua;
 use std::io::{Error, ErrorKind};
-use std::path::Path;
 use std::{collections::HashMap, fs};
-
-fn get_lua_filename_no_ext(file_path: &str) -> String {
-    let path = Path::new(file_path);
-    path.file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or("")
-        .trim_end_matches(".lua")
-        .to_string()
-}
 
 // Usado para simplificar o Err(Error::new()) em algumas partes do código
 fn create_error(kind: ErrorKind, message: String) -> Result<String, Error> {
@@ -52,8 +42,6 @@ impl Database {
             )
         })?;
 
-        let filename = get_lua_filename_no_ext(file_path);
-
         self.lua_vm.load(&lua_file).exec().map_err(|lua_err| {
             Error::new(
                 ErrorKind::InvalidData,
@@ -76,7 +64,7 @@ impl Database {
         })?;
 
         self.extensions.insert(
-            filename,
+            file_path.to_string(),
             LuaExtension {
                 get: get_func,
                 add: add_func,
@@ -114,6 +102,7 @@ impl Database {
             let results_vec = result.into_vec();
 
             // Se retorna só string, consideramos como true
+            // Se retorna um booleano, validamos se é true
             match results_vec.len() {
                 1 => {
                     let lua_value = &results_vec[0];

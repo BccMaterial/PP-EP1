@@ -21,7 +21,7 @@ pub fn prompt_user(delimiter: Option<&str>) -> UserInput {
 pub fn print_help() {
     println!("ADD {{chave}} {{valor}} -> Adiciona uma chave");
     println!("GET {{chave}} -> Pega uma chave");
-    println!("PRINT -> Printa os dados ou as extensões (Valores: data/extensions)");
+    println!("PRINT -> Printa os dados ou as extensões (Valores: [data]/extensions)");
     println!("LOAD {{caminho}} -> Carrega uma extensão");
     println!("EXIT -> Termina a execução");
     println!("HELP -> Mostra essa mensagem");
@@ -29,7 +29,7 @@ pub fn print_help() {
 
 pub fn add_key(db: &mut Database, input: UserInput) {
     if input.options.len() < 2 {
-        println!("GET precisa de uma chave e um valor (Ex.: ADD nome thiago)");
+        println!("ADD precisa de uma chave e um valor (Ex.: ADD nome thiago)");
         return;
     }
     // TODO:
@@ -57,7 +57,7 @@ pub fn get_key(db: &Database, input: UserInput) {
 
 pub fn print_info(db: &Database, input: UserInput) {
     if input.options.len() < 1 {
-        println!("PRINT precisa de um argumento (Ex.: PRINT data)");
+        println!("{:?}", db.data);
         return;
     }
     let argument = &input.options[0].to_string().to_uppercase();

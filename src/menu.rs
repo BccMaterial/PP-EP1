@@ -5,16 +5,14 @@ use super::database::Database;
 use std::io;
 use user_input::UserInput;
 
-// TODO: Adicionar função LOAD para o LUA
-
 pub fn prompt_user(delimiter: Option<&str>) -> UserInput {
     let mut input = String::new();
     print!("{}", delimiter.unwrap_or("> "));
     // Garante que o prompt seja exibido
-    io::Write::flush(&mut io::stdout()).expect("flush failed!");
+    io::Write::flush(&mut io::stdout()).expect("ERRO: Falha ao fazer o flush do stdout");
     io::stdin()
         .read_line(&mut input)
-        .expect("ERRO: Falha ao ler a linha");
+        .expect("ERRO: Falha ao ler o input do usuário");
     UserInput::new(input)
 }
 
@@ -29,7 +27,7 @@ pub fn print_help() {
 
 pub fn add_key(db: &mut Database, input: UserInput) {
     if input.options.len() < 2 {
-        println!("ADD precisa de uma chave e um valor (Ex.: ADD nome thiago)");
+        println!("ADD precisa de uma chave e um valor (Ex.: ADD nome <valor>)");
         return;
     }
     // TODO:
@@ -57,9 +55,11 @@ pub fn get_key(db: &Database, input: UserInput) {
 
 pub fn print_info(db: &Database, input: UserInput) {
     if input.options.len() < 1 {
+        // Como default printamos os dados
         println!("{:?}", db.data);
         return;
     }
+
     let argument = &input.options[0].to_string().to_uppercase();
 
     match argument.as_str() {

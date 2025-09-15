@@ -1,9 +1,11 @@
+use std::io::{Error, ErrorKind};
 use std::str::FromStr;
 
-// DISCLAIMER: Fiz isso pra brincar com ENUM
-pub struct ParseDBCommandError;
+fn new_error(kind: ErrorKind, message: &str) -> Result<DBCommand, Error> {
+    return Err(Error::new(kind, message));
+}
 
-// TODO: Adicionar comando LUA, p/ carregar extensão
+// Comandos suportados
 pub enum DBCommand {
     ERROR = -1,
     EXIT = 0,
@@ -15,7 +17,7 @@ pub enum DBCommand {
 }
 
 impl FromStr for DBCommand {
-    type Err = ParseDBCommandError;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
@@ -25,7 +27,7 @@ impl FromStr for DBCommand {
             "HELP" => Ok(DBCommand::HELP),
             "LOAD" => Ok(DBCommand::LOAD),
             "EXIT" => Ok(DBCommand::EXIT),
-            _ => Err(ParseDBCommandError),
+            _ => new_error(ErrorKind::NotFound, "ERRO: Comando não encontrado."),
         }
     }
 }

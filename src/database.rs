@@ -12,6 +12,11 @@ fn get_lua_filename_no_ext(file_path: &str) -> String {
         .to_string()
 }
 
+// Usado para simplificar o Err(Error::new()) em algumas partes do código
+fn create_error(kind: ErrorKind, message: String) -> Result<String, Error> {
+    return Err(Error::new(kind, message));
+}
+
 pub struct LuaExtension {
     pub get: mlua::Function,
     pub add: mlua::Function,
@@ -85,8 +90,10 @@ impl Database {
         let value: String = match self.data.get(key) {
             Some(v) => v.to_string(),
             None => {
-                let err = Error::new(ErrorKind::NotFound, "ERRO: Chave não encontrada");
-                return Err(err);
+                return create_error(
+                    ErrorKind::NotFound,
+                    String::from("Erro: Chave não encontrada"),
+                );
             }
         };
 
@@ -143,28 +150,28 @@ impl Database {
                         match lua_value.to_string() {
                             Ok(s) => return Ok(s),
                             Err(lua_err) => {
-                                return Err(Error::new(
+                                return create_error(
                                     ErrorKind::InvalidData,
                                     format!("Erro ao converter o retorno para string: {lua_err}"),
-                                ));
+                                );
                             }
                         }
                     } else {
-                        return Err(Error::new(
+                        return create_error(
                             ErrorKind::InvalidData,
                             format!(
                                 "ERRO: Os retornos do \"get\" da extensão {ext_name} não seguem o formato string, bool"
                             ),
-                        ));
+                        );
                     }
                 }
                 _ => {
-                    return Err(Error::new(
+                    return create_error(
                         ErrorKind::InvalidData,
                         format!(
                             "Erro ao executar \"get\" com a extensão {ext_name}: Quantidade de retornos da função inválida (Deve retornar string, bool ou string)"
                         ),
-                    ));
+                    );
                 }
             }
         }
@@ -198,9 +205,15 @@ impl Database {
             }
         }
 
+        // Uso do match por conta do insert:
+        // Se tinha valor na key, retorna Some(valor)
+        // Caso contrário, retorna "None"
         match self.data.insert(data.0.to_string(), data.1.to_string()) {
-            Some(_) => {
-                return Ok(String::from(format!("UPDATED {} = {}", data.0, data.1)));
+            Some(value) => {
+                return Ok(String::from(format!(
+                    "UPDATED {} = {} (was {value})",
+                    data.0, data.1
+                )));
             }
             None => {
                 return Ok(String::from(format!("ADDED {} = {}", data.0, data.1)));

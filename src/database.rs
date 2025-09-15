@@ -117,14 +117,15 @@ impl Database {
                             }
                         }
                     } else if lua_value.is_boolean() {
-                        if lua_value.as_boolean().unwrap_or(false) {
-                            continue;
-                        }
+                        // Caso o get seja um bool, apenas ignoramos
+                        // MOTIVO: se a função retorna false por não der match por exemplo,
+                        // receberíamos um erro
+                        continue;
                     } else {
                         return Err(Error::new(
                             ErrorKind::InvalidData,
                             format!(
-                                "ERRO: O retorno do \"get\" da extensão {ext_name} não é uma string"
+                                "ERRO: O retorno do \"get\" da extensão {ext_name} é inválido (deve ser string + bool, string ou bool)"
                             ),
                         ));
                     }

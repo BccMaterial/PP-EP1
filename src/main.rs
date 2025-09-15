@@ -15,7 +15,6 @@ fn main() {
     println!("- EXIT -> Termina a execução");
     loop {
         let input: UserInput = menu::prompt_user(None);
-        // Aqui precisamos converter para &str
         match input.command {
             DBCommand::EXIT => {
                 println!("Valeu falô!");

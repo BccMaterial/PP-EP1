@@ -117,10 +117,12 @@ impl Database {
                             }
                         }
                     } else if lua_value.is_boolean() {
-                        // Caso o get seja um bool, apenas ignoramos
-                        // MOTIVO: se a função retorna false por não der match por exemplo,
-                        // receberíamos um erro
-                        continue;
+                        // Caso o get seja um bool, apenas paramos o loop
+                        // MOTIVO: Sempre paramos a iteração na primeira extensão
+                        // que for válida, para garantir performance
+                        if lua_value.as_boolean().unwrap_or(false) {
+                            break;
+                        }
                     } else {
                         return Err(Error::new(
                             ErrorKind::InvalidData,

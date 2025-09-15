@@ -71,6 +71,22 @@ impl Database {
             },
         );
 
+        // Limpamos as variáveis, para conseguirmos validar em outras extensões se "add" ou "get"
+        // existem
+        self.lua_vm
+            .globals()
+            .set("get", mlua::Nil)
+            .map_err(|lua_err| {
+                Error::new(ErrorKind::Other, format!("Erro ao limpar get: {lua_err}"))
+            })?;
+
+        self.lua_vm
+            .globals()
+            .set("add", mlua::Nil)
+            .map_err(|lua_err| {
+                Error::new(ErrorKind::Other, format!("Erro ao limpar add: {lua_err}"))
+            })?;
+
         Ok(String::from("Extensão adicionada com sucesso!"))
     }
 

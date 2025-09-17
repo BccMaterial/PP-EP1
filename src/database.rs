@@ -1,20 +1,10 @@
+pub mod error;
+pub mod util;
+
+use error::DBError;
 use mlua;
-use std::io::{Error, ErrorKind};
-use std::{collections::HashMap, fs};
-
-// Usado para simplificar o Err(Error::new()) em algumas partes do código
-fn create_error(kind: ErrorKind, message: String) -> Result<String, Error> {
-    return Err(Error::new(kind, message));
-}
-
-pub struct LuaExtension {
-    pub get: mlua::Function,
-    pub add: mlua::Function,
-}
-
-// HashMap não pode ser &str, pois precisamos guardar na memória
-pub type DBData = HashMap<String, String>;
-pub type DBExtensions = HashMap<String, LuaExtension>;
+use std::fs;
+use util::{DBData, DBExtensions, LuaExtension};
 
 pub struct Database {
     pub data: DBData,
@@ -31,33 +21,21 @@ impl Database {
         }
     }
 
-    pub fn add_extension(&mut self, file_path: &str) -> Result<String, Error> {
-        let lua_file = fs::read_to_string(file_path.to_string()).map_err(|file_err| {
-            Error::new(
-                file_err.kind(),
-                format!("Erro ao abrir o arquivo {file_path}: {file_err}"),
-            )
-        })?;
+    pub fn add_extension(&mut self, file_path: &str) -> Result<String, DBError> {
+        let lua_file = fs::read_to_string(file_path)
+            .map_err(|file_err| DBError::FileReadError(file_path.to_string(), file_err))?;
 
-        self.lua_vm.load(&lua_file).exec().map_err(|lua_err| {
-            Error::new(
-                ErrorKind::InvalidData,
-                format!("Erro ao interpretar o script {file_path}: {lua_err}"),
-            )
-        })?;
+        self.lua_vm
+            .load(&lua_file)
+            .exec()
+            .map_err(|lua_err| DBError::ExtensionError(file_path.to_string(), lua_err))?;
 
         let get_func: mlua::Function = self.lua_vm.globals().get("get").map_err(|lua_err| {
-            Error::new(
-                ErrorKind::InvalidData,
-                format!("Erro ao carregar função get: {lua_err}"),
-            )
+            DBError::LoadFuncError(String::from("get"), file_path.to_string(), lua_err)
         })?;
 
         let add_func: mlua::Function = self.lua_vm.globals().get("add").map_err(|lua_err| {
-            Error::new(
-                ErrorKind::InvalidData,
-                format!("Erro ao carregar função add: {lua_err}"),
-            )
+            DBError::LoadFuncError(String::from("add"), file_path.to_string(), lua_err)
         })?;
 
         self.extensions.insert(
@@ -74,27 +52,24 @@ impl Database {
             .globals()
             .set("get", mlua::Nil)
             .map_err(|lua_err| {
-                Error::new(ErrorKind::Other, format!("Erro ao limpar get: {lua_err}"))
+                DBError::ClearFuncError(String::from("get"), file_path.to_string(), lua_err)
             })?;
 
         self.lua_vm
             .globals()
             .set("add", mlua::Nil)
             .map_err(|lua_err| {
-                Error::new(ErrorKind::Other, format!("Erro ao limpar add: {lua_err}"))
+                DBError::ClearFuncError(String::from("add"), file_path.to_string(), lua_err)
             })?;
 
         Ok(String::from("Extensão adicionada com sucesso!"))
     }
 
-    pub fn get_data(&self, key: &str) -> Result<String, Error> {
+    pub fn get_data(&self, key: &str) -> Result<String, DBError> {
         let value: String = match self.data.get(key) {
             Some(v) => v.to_string(),
             None => {
-                return create_error(
-                    ErrorKind::NotFound,
-                    String::from("Erro: Chave não encontrada"),
-                );
+                return Err(DBError::DataNotFound(String::from(key)));
             }
         };
 
@@ -104,12 +79,7 @@ impl Database {
                     .get
                     .call((key, value.as_str()))
                     .map_err(|lua_err| {
-                        Error::new(
-                            ErrorKind::InvalidData,
-                            format!(
-                                "Erro ao executar \"get\" com a extensão {ext_name}: {lua_err}"
-                            ),
-                        )
+                        DBError::ExecFuncError(String::from("get"), ext_name.to_string(), lua_err)
                     })?;
 
             let results_vec = result.into_vec();
@@ -123,9 +93,10 @@ impl Database {
                         match lua_value.to_string() {
                             Ok(s) => return Ok(s),
                             Err(lua_err) => {
-                                return Err(Error::new(
-                                    ErrorKind::InvalidData,
-                                    format!("Erro ao converter o retorno para string: {lua_err}"),
+                                return Err(DBError::ConversionError(
+                                    String::from("string"),
+                                    ext_name.to_string(),
+                                    lua_err,
                                 ));
                             }
                         }
@@ -137,11 +108,10 @@ impl Database {
                             break;
                         }
                     } else {
-                        return Err(Error::new(
-                            ErrorKind::InvalidData,
-                            format!(
-                                "ERRO: O retorno do \"get\" da extensão {ext_name} é inválido (deve ser string + bool, string ou bool)"
-                            ),
+                        return Err(DBError::InvalidFuncReturn(
+                            String::from("get"),
+                            ext_name.to_string(),
+                            String::from("deve ser string + bool, string ou bool"),
                         ));
                     }
                 }
@@ -155,28 +125,27 @@ impl Database {
                         match lua_value.to_string() {
                             Ok(s) => return Ok(s),
                             Err(lua_err) => {
-                                return create_error(
-                                    ErrorKind::InvalidData,
-                                    format!("Erro ao converter o retorno para string: {lua_err}"),
-                                );
+                                return Err(DBError::ConversionError(
+                                    String::from("string"),
+                                    ext_name.to_string(),
+                                    lua_err,
+                                ));
                             }
                         }
                     } else {
-                        return create_error(
-                            ErrorKind::InvalidData,
-                            format!(
-                                "ERRO: Os retornos do \"get\" da extensão {ext_name} não seguem o formato string, bool"
-                            ),
-                        );
+                        return Err(DBError::InvalidFuncReturn(
+                            String::from("get"),
+                            ext_name.to_string(),
+                            String::from("deve ser string + bool, string ou bool"),
+                        ));
                     }
                 }
                 _ => {
-                    return create_error(
-                        ErrorKind::InvalidData,
-                        format!(
-                            "Erro ao executar \"get\" com a extensão {ext_name}: Quantidade de retornos da função inválida (Deve retornar string, bool ou string)"
-                        ),
-                    );
+                    return Err(DBError::InvalidFuncReturn(
+                        String::from("get"),
+                        ext_name.to_string(),
+                        String::from("deve ser string + bool, string ou bool"),
+                    ));
                 }
             }
         }
@@ -184,24 +153,20 @@ impl Database {
         Ok(value)
     }
 
-    pub fn add_data(&mut self, data: (&str, &str)) -> Result<String, Error> {
+    pub fn add_data(&mut self, data: (&str, &str)) -> Result<String, DBError> {
         for (ext_name, ext_funcs) in &self.extensions {
             let result: mlua::MultiValue = ext_funcs
                 .add
                 .call((data.0.to_string(), data.1.to_string()))
                 .map_err(|lua_err| {
-                    Error::new(
-                        ErrorKind::InvalidData,
-                        format!("Erro ao executar \"add\" com a extensão {ext_name}: {lua_err}"),
-                    )
+                    DBError::ExecFuncError(String::from("add"), ext_name.to_string(), lua_err)
                 })?;
 
             if result.len() != 1 {
-                return Err(Error::new(
-                    ErrorKind::InvalidData,
-                    format!(
-                        "Erro ao executar \"add\" com a extensão {ext_name}: Quantidade de retornos da função inválida (Deve retornar apenas bool)"
-                    ),
+                return Err(DBError::InvalidFuncReturn(
+                    String::from("add"),
+                    ext_name.to_string(),
+                    String::from("deve retornar bool"),
                 ));
             }
 

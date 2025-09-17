@@ -22,21 +22,38 @@ impl Database {
     }
 
     pub fn add_extension(&mut self, file_path: &str) -> Result<String, DBError> {
-        let lua_file = fs::read_to_string(file_path)
-            .map_err(|file_err| DBError::FileReadError(file_path.to_string(), file_err))?;
+        let lua_file = fs::read_to_string(file_path).map_err(|io_err| DBError::FileReadError {
+            file_path: file_path.to_string(),
+            io_err,
+        })?;
 
         self.lua_vm
             .load(&lua_file)
             .exec()
-            .map_err(|lua_err| DBError::ExtensionError(file_path.to_string(), lua_err))?;
+            .map_err(|lua_err| DBError::ExtensionError {
+                file_path: file_path.to_string(),
+                lua_err,
+            })?;
 
-        let get_func: mlua::Function = self.lua_vm.globals().get("get").map_err(|lua_err| {
-            DBError::LoadFuncError(String::from("get"), file_path.to_string(), lua_err)
-        })?;
+        let get_func: mlua::Function =
+            self.lua_vm
+                .globals()
+                .get("get")
+                .map_err(|lua_err| DBError::LoadFuncError {
+                    func_name: String::from("get"),
+                    file_path: file_path.to_string(),
+                    lua_err,
+                })?;
 
-        let add_func: mlua::Function = self.lua_vm.globals().get("add").map_err(|lua_err| {
-            DBError::LoadFuncError(String::from("add"), file_path.to_string(), lua_err)
-        })?;
+        let add_func: mlua::Function =
+            self.lua_vm
+                .globals()
+                .get("add")
+                .map_err(|lua_err| DBError::LoadFuncError {
+                    func_name: String::from("add"),
+                    file_path: file_path.to_string(),
+                    lua_err,
+                })?;
 
         self.extensions.insert(
             file_path.to_string(),
@@ -51,15 +68,19 @@ impl Database {
         self.lua_vm
             .globals()
             .set("get", mlua::Nil)
-            .map_err(|lua_err| {
-                DBError::ClearFuncError(String::from("get"), file_path.to_string(), lua_err)
+            .map_err(|lua_err| DBError::ClearFuncError {
+                func_name: String::from("get"),
+                file_path: file_path.to_string(),
+                lua_err,
             })?;
 
         self.lua_vm
             .globals()
             .set("add", mlua::Nil)
-            .map_err(|lua_err| {
-                DBError::ClearFuncError(String::from("add"), file_path.to_string(), lua_err)
+            .map_err(|lua_err| DBError::ClearFuncError {
+                func_name: String::from("add"),
+                file_path: file_path.to_string(),
+                lua_err,
             })?;
 
         Ok(String::from("Extensão adicionada com sucesso!"))
@@ -69,7 +90,9 @@ impl Database {
         let value: String = match self.data.get(key) {
             Some(v) => v.to_string(),
             None => {
-                return Err(DBError::DataNotFound(String::from(key)));
+                return Err(DBError::DataNotFound {
+                    key: String::from(key),
+                });
             }
         };
 
@@ -78,8 +101,10 @@ impl Database {
                 ext_funcs
                     .get
                     .call((key, value.as_str()))
-                    .map_err(|lua_err| {
-                        DBError::ExecFuncError(String::from("get"), ext_name.to_string(), lua_err)
+                    .map_err(|lua_err| DBError::ExecFuncError {
+                        func_name: String::from("get"),
+                        ext_name: ext_name.to_string(),
+                        lua_err,
                     })?;
 
             let results_vec = result.into_vec();
@@ -93,11 +118,11 @@ impl Database {
                         match lua_value.to_string() {
                             Ok(s) => return Ok(s),
                             Err(lua_err) => {
-                                return Err(DBError::ConversionError(
-                                    String::from("string"),
-                                    ext_name.to_string(),
+                                return Err(DBError::ConversionError {
+                                    type_name: String::from("string"),
+                                    ext_name: ext_name.to_string(),
                                     lua_err,
-                                ));
+                                });
                             }
                         }
                     } else if lua_value.is_boolean() {
@@ -108,11 +133,11 @@ impl Database {
                             break;
                         }
                     } else {
-                        return Err(DBError::InvalidFuncReturn(
-                            String::from("get"),
-                            ext_name.to_string(),
-                            String::from("deve ser string + bool, string ou bool"),
-                        ));
+                        return Err(DBError::InvalidFuncReturn {
+                            func_name: String::from("get"),
+                            ext_name: ext_name.to_string(),
+                            reason: String::from("deve ser string + bool, string ou bool"),
+                        });
                     }
                 }
                 2 => {
@@ -125,27 +150,27 @@ impl Database {
                         match lua_value.to_string() {
                             Ok(s) => return Ok(s),
                             Err(lua_err) => {
-                                return Err(DBError::ConversionError(
-                                    String::from("string"),
-                                    ext_name.to_string(),
+                                return Err(DBError::ConversionError {
+                                    type_name: String::from("string"),
+                                    ext_name: ext_name.to_string(),
                                     lua_err,
-                                ));
+                                });
                             }
                         }
                     } else {
-                        return Err(DBError::InvalidFuncReturn(
-                            String::from("get"),
-                            ext_name.to_string(),
-                            String::from("deve ser string + bool, string ou bool"),
-                        ));
+                        return Err(DBError::InvalidFuncReturn {
+                            func_name: String::from("get"),
+                            ext_name: ext_name.to_string(),
+                            reason: String::from("deve ser string + bool, string ou bool"),
+                        });
                     }
                 }
                 _ => {
-                    return Err(DBError::InvalidFuncReturn(
-                        String::from("get"),
-                        ext_name.to_string(),
-                        String::from("deve ser string + bool, string ou bool"),
-                    ));
+                    return Err(DBError::InvalidFuncReturn {
+                        func_name: String::from("get"),
+                        ext_name: ext_name.to_string(),
+                        reason: String::from("deve ser string + bool, string ou bool"),
+                    });
                 }
             }
         }
@@ -158,16 +183,18 @@ impl Database {
             let result: mlua::MultiValue = ext_funcs
                 .add
                 .call((data.0.to_string(), data.1.to_string()))
-                .map_err(|lua_err| {
-                    DBError::ExecFuncError(String::from("add"), ext_name.to_string(), lua_err)
+                .map_err(|lua_err| DBError::ExecFuncError {
+                    func_name: String::from("add"),
+                    ext_name: ext_name.to_string(),
+                    lua_err,
                 })?;
 
             if result.len() != 1 {
-                return Err(DBError::InvalidFuncReturn(
-                    String::from("add"),
-                    ext_name.to_string(),
-                    String::from("deve retornar bool"),
-                ));
+                return Err(DBError::InvalidFuncReturn {
+                    func_name: String::from("add"),
+                    ext_name: ext_name.to_string(),
+                    reason: String::from("deve retornar bool"),
+                });
             }
 
             if result[0].as_boolean().unwrap_or(false) {

@@ -24,17 +24,14 @@ pub struct Database {
 
 impl Database {
     pub fn new() -> Self {
-        let lua_vm = mlua::Lua::new();
-        let extensions_hashmap: HashMap<String, LuaExtension> = HashMap::new();
-
         Self {
             data: DBData::new(),
-            lua_vm,
-            extensions: extensions_hashmap,
+            lua_vm: mlua::Lua::new(),
+            extensions: DBExtensions::new(),
         }
     }
 
-    pub fn add_extension(self: &mut Self, file_path: &str) -> Result<String, Error> {
+    pub fn add_extension(&mut self, file_path: &str) -> Result<String, Error> {
         let lua_file = fs::read_to_string(file_path.to_string()).map_err(|file_err| {
             Error::new(
                 file_err.kind(),
@@ -90,7 +87,7 @@ impl Database {
         Ok(String::from("Extensão adicionada com sucesso!"))
     }
 
-    pub fn get_data(self: &Self, key: &str) -> Result<String, Error> {
+    pub fn get_data(&self, key: &str) -> Result<String, Error> {
         let value: String = match self.data.get(key) {
             Some(v) => v.to_string(),
             None => {
@@ -187,7 +184,7 @@ impl Database {
         Ok(value)
     }
 
-    pub fn add_data(self: &mut Self, data: (&str, &str)) -> Result<String, Error> {
+    pub fn add_data(&mut self, data: (&str, &str)) -> Result<String, Error> {
         for (ext_name, ext_funcs) in &self.extensions {
             let result: mlua::MultiValue = ext_funcs
                 .add
